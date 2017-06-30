@@ -1,0 +1,23 @@
+{
+  "name": "webrtc-cordova-sample",
+  "version": "0.0.1",
+  "authors": [
+    "Fernando Lafuente saiz <fernandolafuentesaiz@gmail.com>"
+  ],
+  "description": "",
+  "main": "index.html",
+  "license": "MIT",
+  "homepage": "",
+  "private": true,
+  "ignore": [
+    "**/.*",
+    "node_modules",
+    "bower_components",
+    "test",
+    "tests"
+  ],
+  "dependencies": {
+    "peerjs": "^0.3.14",
+    "jquery": "^3.2.1"
+  }
+}
