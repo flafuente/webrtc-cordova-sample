@@ -21,12 +21,13 @@
 </head>
 
 <body>
-    <div class="app">
-        <h1>Test content</h1>
+    <div id="app" class="app">
+        <h1>Choose username</h1>
         <input type="text" id="name" />
         <div id="submit" onclick="registerName()">Submit</div>
     </div>
-    <ul id='userList'>
+    <h2 id="userTitle">Users list:</h2>
+    <ul id="userList">
 
     </ul>
     <script src="bower_components/jquery/dist/jquery.min.js" integrity="sha256-hwg4gsxgFZhOsEEamdOYGBf13FyQuiTwlAQgxVSNgt4="
@@ -36,6 +37,7 @@
     <script type="text/javascript" src="cordova.js"></script>
     <script type="text/javascript" src="js/config.js"></script>
     <script type="text/javascript" src="js/audioChat.js"></script>
+    <script src="bower_components/recordrtc/RecordRTC.js"></script>
     <script type="text/javascript" src="js/index.js"></script>
 </body>
 

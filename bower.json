@@ -18,6 +18,7 @@
   ],
   "dependencies": {
     "peerjs": "^0.3.14",
-    "jquery": "^3.2.1"
+    "jquery": "^3.2.1",
+    "recordrtc": "^5.4.2"
   }
 }
