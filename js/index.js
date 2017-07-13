@@ -126,12 +126,48 @@ function record(stream) {
     }, 9000);
     setTimeout(function () {
         recorder.stopRecording(function (url) {
-            console.log('[blob]', recorder.getBlob());
-            console.log('[virtual url]', url);
-            // TODO: Send Blob to server
+            blob2base64(recorder.getBlob(), function (blob) {
+                var timestamp = new Date().getTime().toString();
+                var formData = {
+                    'name': fileName,
+                    'blob': blob
+                };
+                var formData = {
+                    'call': chat.uuid,
+                    'role': timestamp,
+                    'blob': blob
+                };
+                xhr('http://localhost:3333/api', formData, function (fileURL) {
+
+                });
+
+                function xhr(url, data, callback) {
+                    var request = new XMLHttpRequest();
+                    request.onreadystatechange = function () {
+                        if (request.readyState == 4 && request.status == 200) {
+                            callback(request.responseText);
+                        }
+                    };
+                    request.open('POST', url);
+                    request.setRequestHeader('Content-Type', 'application/json');
+                    request.send(JSON.stringify(data));
+                    // request.send(data);
+                }
+            });
+
+            function blob2base64(blob, cb) {
+                var reader = new FileReader();
+                reader.onload = function () {
+                    var dataUrl = reader.result;
+                    var base64 = dataUrl.split(',')[1];
+                    cb(base64);
+                };
+                reader.readAsDataURL(blob);
+            };
         });
     }, 13000);
 
 }
+
 
 app.initialize();
