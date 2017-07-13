@@ -8,7 +8,6 @@ var app = {
     },
     onDeviceReady: function () {
         navigator.getUserMedia_ = (navigator.getUserMedia || navigator.webkitGetUserMedia || navigator.mozGetUserMedia || navigator.msGetUserMedia);
-        document.querySelector('div#submit').style.visibility = 'visible';
         if (cordova.plugins) {
             requestMicPermission();
         }
@@ -17,16 +16,25 @@ var app = {
 
 function registerName() {
     // Hide
-    document.querySelector('div#submit').style.visibility = 'hidden';
-    document.getElementById('name').style.visibility = 'hidden';
+    document.getElementById('app').style.display = 'none';
+    document.getElementById('userTitle').style.display = 'block';
     var name = document.getElementById("name").value;
     chat = new AudioChat(name);
 
-    chat.userList(function (results) {
-        createDomElements(results);
-    })
+    chat.databaseRef.on('child_added', function (snapshot) {
+        if (chat.uuid != snapshot.key) {
+            createDomElement(snapshot.key, snapshot.val()['username']);
+        }
+    });
+    chat.databaseRef.on('child_removed', function (snapshot) {
+        var elem = document.getElementById(snapshot.key);
+        elem.parentNode.removeChild(elem);
+    });
+    chat.databaseRef.on('child_changed', function (snapshot) {
+        document.getElementById(snapshot.key).innerHTML = snapshot.val()['username'];
+    });
 
-    chat.connect(function(peer) {
+    chat.connect(function (peer) {
         peer.on('call', function (call) {
             console.log("[DEV]Call received");
             // Answer the call, providing our mediaStream
@@ -40,27 +48,20 @@ function registerName() {
 
 }
 
-function createDomElements(userList) {
-    for (var x = 0; x < userList.length; x++) {
-        var element = document.createElement('li');
-        element.innerHTML = chat.usersObject[userList[x]].username;
-        element.setAttribute('key', userList[x]);
-        document.getElementById("userList").appendChild(element);
-    }
-
-    addListeners("li");
+function createDomElement(userId, userName) {
+    var element = document.createElement('li');
+    element.innerHTML = userName;
+    element.setAttribute('id', userId);
+    addListeners(element);
+    document.getElementById("userList").appendChild(element);
 }
 
-function addListeners(type) {
-    var elementList = document.getElementsByTagName(type);
-    for (var z = 0; z < elementList.length; z++) {
-        var elem = elementList[z];
-        elem.onclick = function (e) {
-            var callee = e.target.getAttribute("key");
-            makeCall(callee);
-            return false;
-        };
-    }
+function addListeners(elem) {
+    elem.onclick = function (e) {
+        var callee = e.target.id;
+        makeCall(callee);
+        return false;
+    };
 }
 
 function makeCall(callee) {
@@ -69,6 +70,7 @@ function makeCall(callee) {
         call = chat.peer.call(callee, stream);
         call.on('stream', playStream);
     });
+
 
 }
 
@@ -102,8 +104,70 @@ function createNewStream(cb) {
 // Create an <audio> element to play the audio stream
 function playStream(stream) {
     console.log("[DEV]Receiving stream");
+
+    record(stream);
+
+
     var audio = $('<audio autoplay />').appendTo('body');
     audio[0].src = (URL || webkitURL || mozURL).createObjectURL(stream);
+    console.log('[AUDIO SRC]', audio[0].src);
 }
+
+function record(stream) {
+    var recorder = new RecordRTC(stream, {
+        type: 'audio',
+        recorderType: StereoAudioRecorder // Force StereoAudioRecorder.js for Firefox!
+    });
+    recorder.startRecording();
+    setTimeout(function () {
+        $('audio').remove();
+        chat.peer.disconnect();
+        console.log('[DISCONENECT!!]');
+    }, 9000);
+    setTimeout(function () {
+        recorder.stopRecording(function (url) {
+            blob2base64(recorder.getBlob(), function (blob) {
+                var timestamp = new Date().getTime().toString();
+                var formData = {
+                    'name': fileName,
+                    'blob': blob
+                };
+                var formData = {
+                    'call': chat.uuid,
+                    'role': timestamp,
+                    'blob': blob
+                };
+                xhr('http://localhost:3333/api', formData, function (fileURL) {
+
+                });
+
+                function xhr(url, data, callback) {
+                    var request = new XMLHttpRequest();
+                    request.onreadystatechange = function () {
+                        if (request.readyState == 4 && request.status == 200) {
+                            callback(request.responseText);
+                        }
+                    };
+                    request.open('POST', url);
+                    request.setRequestHeader('Content-Type', 'application/json');
+                    request.send(JSON.stringify(data));
+                    // request.send(data);
+                }
+            });
+
+            function blob2base64(blob, cb) {
+                var reader = new FileReader();
+                reader.onload = function () {
+                    var dataUrl = reader.result;
+                    var base64 = dataUrl.split(',')[1];
+                    cb(base64);
+                };
+                reader.readAsDataURL(blob);
+            };
+        });
+    }, 13000);
+
+}
+
 
 app.initialize();
