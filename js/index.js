@@ -1,5 +1,7 @@
 var chat = {};
 var localStream = null;
+var localNotification = document.querySelector('#localSpeaking');
+var remoteNotification = document.querySelector('#remoteSpeaking');
 var app = {
     // Application Constructor
     initialize: function () {
@@ -93,6 +95,16 @@ function createNewStream(cb) {
         },
         function (stream) {
             localStream = stream;
+            var options = {};
+            var speechEventsLocal = hark(stream, options);
+
+            speechEventsLocal.on('speaking', function () {
+                localNotification.style.display = 'block';
+            });
+
+            speechEventsLocal.on('stopped_speaking', function () {
+                localNotification.style.display = 'none';
+            });
             cb(null, stream);
         },
         function (err) {
@@ -105,12 +117,24 @@ function createNewStream(cb) {
 function playStream(stream) {
     console.log("[DEV]Receiving stream");
 
-    record(stream);
+    // record(stream);
 
 
     var audio = $('<audio autoplay />').appendTo('body');
     audio[0].src = (URL || webkitURL || mozURL).createObjectURL(stream);
-    console.log('[AUDIO SRC]', audio[0].src);
+    console.log('[AUDIO SRC]', (URL || webkitURL || mozURL).createObjectURL(stream));
+
+    var options = {};
+    var speechEventsRemote = hark(stream, options);
+
+    speechEventsRemote.on('speaking', function () {
+        remoteNotification.style.display = 'block';
+    });
+
+    speechEventsRemote.on('stopped_speaking', function () {
+        remoteNotification.style.display = 'none';
+    });
+
 }
 
 function record(stream) {
