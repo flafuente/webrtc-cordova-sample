@@ -1,10 +1,3 @@
-/*
- *  Copyright (c) 2014 The WebRTC project authors. All Rights Reserved.
- *
- *  Use of this source code is governed by a BSD-style license
- *  that can be found in the LICENSE file in the root of the source
- *  tree.
- */
 'use strict';
 
 function MicTest() {
@@ -14,35 +7,6 @@ function MicTest() {
     } catch (e) {
         console.log('Failed to instantiate an audio context, error: ' + e);
     }
-    // Move to report class
-    this.test = {
-        "reportInfo": function (e) {
-            console.log('====================================');
-            console.log('Info', e);
-            console.log('====================================');
-        },
-        "reportError": function (e) {
-            console.log('====================================');
-            console.log('Error', e);
-            console.log('====================================');
-        },
-        "done": function () {
-            console.log('====================================');
-            console.log('==============Finish================');
-            console.log('====================================');
-        },
-        "reportSuccess": function (e) {
-            console.log('====================================');
-            console.log('Success', e);
-            console.log('====================================');
-        },
-        "reportWarning": function (e) {
-
-            console.log('====================================');
-            console.log('Warning', e);
-            console.log('====================================');
-        },
-    };
     this.inputChannelCount = 6;
     this.outputChannelCount = 2;
     // Buffer size set to 0 to let Chrome choose based on the platform.
@@ -74,12 +38,13 @@ function MicTest() {
         this.collectedAudio[i] = [];
     }
 }
+
 function getDeviceName_(tracks) {
-        if (tracks.length === 0) {
-          return null;
-        }
-        return tracks[0].label;
-      }
+    if (tracks.length === 0) {
+        return null;
+    }
+    return tracks[0].label;
+}
 
 function doGetUserMedia(constraints, onSuccess, onFail) {
     try {
@@ -94,39 +59,41 @@ function doGetUserMedia(constraints, onSuccess, onFail) {
             });
     } catch (e) {
         console.log(e);
-        this.test.reportError('getUserMedia failed.');
+        this.reportError('getUserMedia failed.');
     }
 }
 MicTest.prototype = {
-    run: function () {
+    run: function (report) {
+        this.report = report.setTest('mic');
         if (typeof this.audioContext === 'undefined') {
-            this.test.reportError('WebAudio is not supported, test cannot run.');
-            this.test.done();
+            this.report.reportError('WebAudio is not supported, test cannot run.');
+            this.report.done();
         } else {
             doGetUserMedia(this.constraints, this.gotStream.bind(this), this.noStream.bind(this));
         }
+        return ;
     },
 
     gotStream: function (stream) {
         if (!this.checkAudioTracks(stream)) {
-            this.test.done();
+            this.report.done();
             return;
         }
         this.createAudioBuffer(stream);
     },
 
     noStream: function (stream) {
-        this.test.reportError('Failed to access local media.');
+        this.report.reportError('Failed to access local media.');
     },
 
     checkAudioTracks: function (stream) {
         this.stream = stream;
         var audioTracks = stream.getAudioTracks();
         if (audioTracks.length < 1) {
-            this.test.reportError('No audio track in returned stream.');
+            this.report.reportError('No audio track in returned stream.');
             return false;
         }
-        this.test.reportSuccess('Audio track created using device=' +
+        this.report.reportSuccess('Audio track created using device=' +
             audioTracks[0].label);
         return true;
     },
@@ -180,7 +147,7 @@ MicTest.prototype = {
         this.audioSource.disconnect(this.scriptNode);
         this.scriptNode.disconnect(this.audioContext.destination);
         this.analyzeAudio(this.collectedAudio);
-        this.test.done();
+        this.report.done();
     },
 
     analyzeAudio: function (channels) {
@@ -191,11 +158,11 @@ MicTest.prototype = {
             }
         }
         if (activeChannels.length === 0) {
-            this.test.reportError('No active input channels detected. Microphone ' +
+            this.report.reportError('No active input channels detected. Microphone ' +
                 'is most likely muted or broken, please check if muted in the ' +
                 'sound settings or physically on the device. Then rerun the test.');
         } else {
-            this.test.reportSuccess('Active audio input channels: ' +
+            this.report.reportSuccess('Active audio input channels: ' +
                 activeChannels.length);
         }
         if (activeChannels.length === 2) {
@@ -235,14 +202,14 @@ MicTest.prototype = {
         if (maxPeak > this.silentThreshold) {
             var dBPeak = this.dBFS(maxPeak);
             var dBRms = this.dBFS(maxRms);
-            this.test.reportInfo('Channel ' + channelNumber + ' levels: ' +
+            this.report.reportInfo('Channel ' + channelNumber + ' levels: ' +
                 dBPeak.toFixed(1) + ' dB (peak), ' + dBRms.toFixed(1) + ' dB (RMS)');
             if (dBRms < this.lowVolumeThreshold) {
-                this.test.reportError('Microphone input level is low, increase input ' +
+                this.report.reportError('Microphone input level is low, increase input ' +
                     'volume or move closer to the microphone.');
             }
             if (maxClipCount > this.clipCountThreshold) {
-                this.test.reportWarning('Clipping detected! Microphone input level ' +
+                this.report.reportWarning('Clipping detected! Microphone input level ' +
                     'is high. Decrease input volume or move away from the microphone.');
             }
             return true;
@@ -268,9 +235,9 @@ MicTest.prototype = {
             }
         }
         if (diffSamples > 0) {
-            this.test.reportInfo('Stereo microphone detected.');
+            this.report.reportInfo('Stereo microphone detected.');
         } else {
-            this.test.reportInfo('Mono microphone detected.');
+            this.report.reportInfo('Mono microphone detected.');
         }
     },
 
