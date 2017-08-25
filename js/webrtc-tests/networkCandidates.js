@@ -4,7 +4,7 @@ var NetworkCandidates = function (settings) {
         iceServers: [{
             username: settings.user,
             credential: settings.password,
-            urls: [settings.server]
+            urls: settings.server
         }]
     };
 };
