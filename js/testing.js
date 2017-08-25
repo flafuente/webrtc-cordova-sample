@@ -1,4 +1,5 @@
 var micTest = new MicTest();
-var networkTest = new NetworkTest();
-var report = new Report([micTest,networkTest]);
+var networkCandidates = new NetworkCandidates({password:"XXXX",server:"turn:XXXX:80",user:"XXXX"});
+
+var report = new Report([micTest,networkCandidates]);
 report.process();
